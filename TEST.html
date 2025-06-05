@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高精度GPS定位</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    iframe {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+      height: 400px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>高精度GPS定位</h1>
+  <p>點擊按鈕以取得精準GPS定位。</p>
+  <button onclick="getHighAccuracyLocation()">取得定位</button>
+
+  <div id="result"></div>
+  <iframe id="map" src="" allowfullscreen></iframe>
+
+  <script>
+    function getHighAccuracyLocation() {
+      const resultDiv = document.getElementById('result');
+      const mapFrame = document.getElementById('map');
+
+      // 檢查瀏覽器是否支援地理定位API
+      if (!navigator.geolocation) {
+        resultDiv.textContent = '您的瀏覽器不支援地理定位API。';
+        return;
+      }
+
+      // 顯示正在定位訊息
+      resultDiv.textContent = '正在嘗試取得高精度定位...';
+      mapFrame.src = ""; // 清空地圖的內容
+
+      const maxAttempts = 5; // 最大重新嘗試次數
+      let attempts = 0; // 當前嘗試次數
+
+      function attemptLocation() {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+
+            // 檢查精度是否符合需求（例如 20 公尺內）
+            if (accuracy >= 0) {
+              resultDiv.innerHTML = `
+                <p>成功定位！</p>
+                <p>緯度：${latitude}</p>
+                <p>經度：${longitude}</p>
+                <p>定位精度：約 ${accuracy} 公尺</p>
+              `;
+              // 顯示地圖
+              mapFrame.src = `https://www.google.com/maps?q=${latitude},${longitude}&hl=zh-TW&z=15&output=embed`;
+            } else {
+              attempts++;
+              if (attempts < maxAttempts) {
+                resultDiv.innerHTML = `
+                  <p>定位精度為 ${accuracy} 公尺，嘗試重新定位 (${attempts}/${maxAttempts})...</p>
+                `;
+                attemptLocation(); // 繼續嘗試
+              } else {
+                resultDiv.innerHTML = `
+                  <p>定位失敗，無法取得高精度（20 公尺內）的定位。</p>
+                  <p>最後取得的精度為：${accuracy} 公尺。</p>
+                `;
+              }
+            }
+          },
+          (error) => {
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                resultDiv.textContent = '使用者拒絕定位請求。';
+                break;
+              case error.POSITION_UNAVAILABLE:
+                resultDiv.textContent = '無法取得定位資訊。';
+                break;
+              case error.TIMEOUT:
+                resultDiv.textContent = '定位請求超時。';
+                break;
+              default:
+                resultDiv.textContent = '發生未知錯誤。';
+            }
+          },
+          {
+            enableHighAccuracy: true, // 啟用高精度模式
+            timeout: 15000, // 每次定位超時時間設置為 15 秒
+            maximumAge: 0 // 確保每次請求取得最新定位資訊
+          }
+        );
+      }
+
+      // 開始嘗試取得定位
+      attemptLocation();
+    }
+  </script>
+</body>
+</html>
