@@ -92,8 +92,9 @@
               .openPopup();
 
             const distance = calculateDistance(userLat, userLng, targetLat, targetLng);
+			const distanceKm = (distance / 1000).toFixed(2); // 轉換成公里
             document.getElementById("distance").textContent =
-              `與選擇地點距離：約 ${distance.toFixed(1)} 公尺`;
+              `與選擇地點距離：約 ${distance.toFixed(1)} 公尺 （${distanceKm} 公里）`;
           });
 
         },
